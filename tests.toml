@@ -1,0 +1,355 @@
+# Run with Python 3.11+; fixtures are created in TEMP, never in the live config.
+[[tests]]
+id = 'powershell_syntax'
+action = 'syntax'
+[tests.input]
+globs = ['install.ps1', 'powershell/*.ps1', 'powershell/modules/*.ps1', 'tests/*.ps1']
+[tests.expected]
+output = []
+
+[[tests]]
+id = 'private_files_stay_ignored'
+action = 'git_ignore'
+[tests.input]
+private_paths = [
+  '.env', '.env.local', 'unknown-app/config.json',
+  'cagent/user-uuid', 'cagent/.cagent_first_run',
+  'codex/auth.json', 'codex/config.toml', 'codex/sessions/session.jsonl', 'codex/state.sqlite',
+  'gh/hosts.yml', 'gh/hosts.yaml', 'gh/config.yml.20261107.bak',
+  'lazygit/state.yml', 'lazygit/github_pull_requests.json',
+  'yazi/bookmark', 'yazi/bookmark.bak', 'yazi/history.json',
+  'yazi/plugins/piper.yazi/.env', 'yazi/plugins/piper.yazi/history.json',
+  'yazi/plugins/piper.yazi/main.lua.bak', 'yazi/plugins/unknown.yazi/main.lua',
+  'micro/buffers/history', 'micro/backups/private.txt', 'micro/log.txt',
+  'powershell/PSReadLine/ConsoleHost_history.txt', 'powershell/modules/private.ps1',
+  'posting/collections/private.posting.yaml', 'posting/collection/private.yaml',
+  'posting/history.sqlite3', 'posting/.env', 'posting/themes/private.yaml',
+  'uv/uv-receipt.json', 'tests/__pycache__/run.pyc',
+]
+[tests.expected.output]
+exposed_private = []
+ignored_public = []
+
+[[tests]]
+id = 'publication_contains_complete_configuration'
+action = 'repository_files'
+[tests.expected.output]
+missing = []
+ignored = []
+unexpected = []
+
+[[tests]]
+id = 'copy_only_settings'
+action = 'copy_plan'
+[tests.input.files]
+'starship.toml' = 'configuration'
+'gh/config.yml' = 'editor: micro'
+'gh/hosts.yml' = 'private authentication'
+'codex/auth.json' = 'private session'
+'posting/collections/private.posting.yaml' = 'private request'
+'posting/themes/private.yaml' = 'private extra file'
+'yazi/bookmark' = 'private bookmark'
+'yazi/plugins/piper.yazi/main.lua' = 'return {}'
+'yazi/plugins/piper.yazi/credentials.yaml' = 'private data'
+'yazi/plugins/piper.yazi/main.lua.bak' = 'old configuration'
+'powershell/modules/aliases.ps1' = '# aliases'
+'powershell/modules/private.ps1' = '# private script'
+'micro/buffers/history' = 'editor history'
+[tests.expected]
+output = ['gh/config.yml', 'powershell/modules/aliases.ps1', 'starship.toml', 'yazi/plugins/piper.yazi/main.lua']
+
+[[tests]]
+id = 'copy_in_place_does_nothing'
+action = 'copy_plan'
+[tests.input]
+same_roots = true
+[tests.input.files]
+'starship.toml' = 'configuration'
+[tests.expected]
+output = []
+
+[[tests]]
+id = 'backup_and_repeat_preserve_private_data'
+action = 'install_config'
+[tests.input]
+repeat = 2
+watch_paths = ['starship.toml', 'gh/hosts.yml', 'posting/collections/private.yaml']
+backup_pattern = '*.bak'
+[tests.input.source_files]
+'starship.toml' = 'new settings'
+'gh/hosts.yml' = 'source authentication must not be copied'
+'posting/collections/private.yaml' = 'source collection must not be copied'
+[tests.input.destination_files]
+'starship.toml' = 'previous settings'
+'gh/hosts.yml' = 'keep authentication'
+'posting/collections/private.yaml' = 'keep collection'
+[tests.expected]
+output = [
+  { files = { 'starship.toml' = 'new settings', 'gh/hosts.yml' = 'keep authentication', 'posting/collections/private.yaml' = 'keep collection' }, backup_count = 1, backup_contents = ['previous settings'] },
+  { files = { 'starship.toml' = 'new settings', 'gh/hosts.yml' = 'keep authentication', 'posting/collections/private.yaml' = 'keep collection' }, backup_count = 1, backup_contents = ['previous settings'] },
+]
+
+[[tests]]
+id = 'profile_path_escapes_apostrophe'
+action = 'call'
+[tests.input]
+function = 'Get-DotfilesProfileLine'
+[tests.input.parameters]
+ConfigRoot = "C:\\Terminal's settings"
+[tests.expected]
+output = ". 'C:\\Terminal''s settings\\powershell\\init.ps1'"
+
+[[tests]]
+id = 'profile_repeat_does_not_duplicate'
+action = 'call'
+[tests.input]
+function = 'Get-DotfilesProfileContent'
+repeat = 2
+feedback_parameter = 'Existing'
+normalize_newlines = true
+[tests.input.parameters]
+ConfigRoot = 'C:\Settings'
+Existing = '# existing profile'
+[tests.expected]
+output = "# existing profile\n. 'C:\\Settings\\powershell\\init.ps1'\n"
+
+[[tests]]
+id = 'profile_recognizes_equivalent_path'
+action = 'call'
+[tests.input]
+function = 'Get-DotfilesProfileContent'
+[tests.input.parameters]
+ConfigRoot = 'C:\Settings'
+Existing = ". 'c:/settings/powershell/init.ps1'\n"
+[tests.expected]
+output = ". 'c:/settings/powershell/init.ps1'\n"
+
+[[tests]]
+id = 'path_keeps_existing_entries'
+action = 'call'
+[tests.input]
+function = 'Get-DotfilesPathEntries'
+array = true
+[tests.input.parameters]
+ProcessPath = 'C:\Tools;C:\Windows;'
+UserPath = 'c:\tools\;C:\UserBin'
+MachinePath = 'C:\WINDOWS;C:\Program Files\Git\cmd'
+AdditionalPaths = ['C:\UserBin', 'C:\Extra']
+[tests.expected]
+output = ['C:\Tools', 'C:\Windows', 'C:\UserBin', 'C:\Program Files\Git\cmd', 'C:\Extra']
+
+[[tests]]
+id = 'native_success'
+action = 'native_result'
+[tests.input]
+command = 'MockInstaller'
+exit_code = 0
+[tests.expected.output]
+Success = true
+RebootRequired = false
+VerifyInstalled = false
+
+[[tests]]
+id = 'native_reboot_required'
+action = 'native_result'
+[tests.input]
+command = 'MockInstaller'
+exit_code = 3010
+[tests.expected.output]
+Success = true
+RebootRequired = true
+VerifyInstalled = false
+
+[[tests]]
+id = 'native_error_stops_installation'
+action = 'native_result'
+[tests.input]
+command = 'MockInstaller'
+exit_code = 42
+[tests.expected]
+error = 'MockInstaller failed with exit code 42.'
+
+[[tests]]
+id = 'dry_run_root_entry'
+action = 'dry_run'
+[tests.input]
+entry = 'install.ps1'
+prohibited_commands = ['winget', 'uv', 'pwsh', 'Invoke-WebRequest', 'Add-AppxPackage', 'New-Item', 'Copy-Item', 'Unblock-File', 'Install-Module', 'Update-DotfilesProcessPath', 'Install-DotfilesWinGet', 'Install-DotfilesFont', 'Install-DotfilesConfiguration', 'Install-DotfilesProfile']
+package_pattern = 'PLAN package (\S+)'
+font_marker = 'PLAN font JetBrainsMono Nerd Font'
+terminal_marker = 'PLAN terminal PowerShell 7 (dotfiles)'
+profile_marker = 'PLAN profile'
+[tests.expected.output]
+package_ids = ['7zip.7zip', 'ajeetdsouza.zoxide', 'astral-sh.uv', 'BurntSushi.ripgrep.MSVC', 'charmbracelet.glow', 'dandavison.delta', 'Docker.DockerDesktop', 'eza-community.eza', 'Git.Git', 'GitHub.cli', 'Gyan.FFmpeg', 'ImageMagick.ImageMagick', 'JesseDuffield.Lazydocker', 'JesseDuffield.lazygit', 'jqlang.jq', 'junegunn.fzf', 'linebender.resvg', 'Microsoft.DotNet.SDK.10', 'Microsoft.PowerShell', 'Microsoft.WindowsTerminal', 'OpenAI.Codex', 'oschwartz10612.Poppler', 'sharkdp.fd', 'Starship.Starship', 'sxyazi.yazi', 'zyedidia.micro']
+destination_created = false
+path_changed = false
+prohibited_calls = []
+font_planned = true
+terminal_planned = true
+profile_planned = true
+
+[[tests]]
+id = 'dry_run_nested_without_profile'
+action = 'dry_run'
+[tests.input]
+entry = 'powershell/install.ps1'
+skip_profile = true
+yes = true
+prohibited_commands = ['winget', 'uv', 'pwsh', 'Invoke-WebRequest', 'Add-AppxPackage', 'New-Item', 'Copy-Item', 'Unblock-File', 'Install-Module', 'Update-DotfilesProcessPath', 'Install-DotfilesWinGet', 'Install-DotfilesFont', 'Install-DotfilesConfiguration', 'Install-DotfilesProfile']
+package_pattern = 'PLAN package (\S+)'
+font_marker = 'PLAN font JetBrainsMono Nerd Font'
+terminal_marker = 'PLAN terminal PowerShell 7 (dotfiles)'
+profile_marker = 'PLAN profile'
+[tests.expected.output]
+package_ids = ['7zip.7zip', 'ajeetdsouza.zoxide', 'astral-sh.uv', 'BurntSushi.ripgrep.MSVC', 'charmbracelet.glow', 'dandavison.delta', 'Docker.DockerDesktop', 'eza-community.eza', 'Git.Git', 'GitHub.cli', 'Gyan.FFmpeg', 'ImageMagick.ImageMagick', 'JesseDuffield.Lazydocker', 'JesseDuffield.lazygit', 'jqlang.jq', 'junegunn.fzf', 'linebender.resvg', 'Microsoft.DotNet.SDK.10', 'Microsoft.PowerShell', 'Microsoft.WindowsTerminal', 'OpenAI.Codex', 'oschwartz10612.Poppler', 'sharkdp.fd', 'Starship.Starship', 'sxyazi.yazi', 'zyedidia.micro']
+destination_created = false
+path_changed = false
+prohibited_calls = []
+font_planned = true
+terminal_planned = true
+profile_planned = false
+
+[[tests]]
+id = 'profile_uses_selected_configuration_root'
+action = 'profile_env'
+[tests.input]
+root_name = 'config with spaces'
+root_marker = '{config}'
+environment_names = ['XDG_CONFIG_HOME', 'CODEX_HOME', 'YAZI_CONFIG_HOME', 'GLOW_CONFIG_HOME', 'GH_CONFIG_DIR', 'MICRO_CONFIG_HOME', 'STARSHIP_CONFIG', 'POSTING_CONFIG_FILE', 'POSTING_THEME_DIRECTORY', 'DOTFILES_DELTA_CONFIG']
+alias_names = ['ls', 'e', 'y', 'cd', 'ed', 'lg', 'lzd']
+[tests.expected.output]
+environment = { XDG_CONFIG_HOME = '{config}', CODEX_HOME = '{config}/codex', YAZI_CONFIG_HOME = '{config}/yazi', GLOW_CONFIG_HOME = '{config}/glow', GH_CONFIG_DIR = '{config}/gh', MICRO_CONFIG_HOME = '{config}/micro', STARSHIP_CONFIG = '{config}/starship.toml', POSTING_CONFIG_FILE = '{config}/posting/config.yaml', POSTING_THEME_DIRECTORY = '{config}/posting/themes', DOTFILES_DELTA_CONFIG = '{config}/lazygit/delta.gitconfig' }
+aliases = { ls = 'Invoke-Eza', e = 'Invoke-Yazi', y = 'Invoke-Yazi', cd = 'Set-LocationVenv', ed = 'micro', lg = 'lazygit', lzd = 'lazydocker' }
+startup_errors = 0
+startup_messages = []
+
+[[tests]]
+id = 'confirmation_enter_skips'
+action = 'component_confirmation'
+[tests.input]
+answers = ['']
+[tests.expected.output]
+accepted = false
+prompt_count = 1
+
+[[tests]]
+id = 'confirmation_retries_invalid_answer'
+action = 'component_confirmation'
+[tests.input]
+answers = ['later', 'yes']
+[tests.expected.output]
+accepted = true
+prompt_count = 2
+
+[[tests]]
+id = 'yes_bypasses_confirmation'
+action = 'component_confirmation'
+[tests.input]
+answers = []
+yes = true
+[tests.expected.output]
+accepted = true
+prompt_count = 0
+
+[[tests]]
+id = 'skip_posting_installation'
+action = 'selective_install'
+[tests.input]
+missing_commands = ['posting']
+font_installed = true
+answers = ['n']
+[tests.expected.output]
+prompts = ['Install Posting? [y/N]']
+native_installs = []
+winget_bootstraps = 0
+font_installs = 0
+profile_configured = true
+terminal_profile_created = true
+terminal_font_configured = true
+configuration_copied = true
+
+[[tests]]
+id = 'allow_docker_skip_posting_and_font'
+action = 'selective_install'
+[tests.input]
+missing_commands = ['docker', 'posting']
+font_installed = false
+answers = ['y', 'n', 'n']
+[tests.expected.output]
+prompts = ['Install Docker.DockerDesktop? [y/N]', 'Install Posting? [y/N]', 'Install JetBrainsMono Nerd Font? [y/N]']
+native_installs = ['Docker.DockerDesktop']
+winget_bootstraps = 0
+font_installs = 0
+profile_configured = true
+terminal_profile_created = true
+terminal_font_configured = false
+configuration_copied = true
+
+[[tests]]
+id = 'skip_uv_prevents_posting_installation'
+action = 'selective_install'
+[tests.input]
+missing_commands = ['uv', 'posting']
+font_installed = true
+answers = ['n', 'y']
+[tests.expected.output]
+prompts = ['Install astral-sh.uv? [y/N]', 'Install Posting? [y/N]']
+native_installs = []
+winget_bootstraps = 0
+font_installs = 0
+profile_configured = true
+terminal_profile_created = true
+terminal_font_configured = true
+configuration_copied = true
+
+[[tests]]
+id = 'skip_powershell_and_terminal'
+action = 'selective_install'
+[tests.input]
+missing_commands = ['pwsh', 'wt', 'posting']
+font_installed = true
+answers = ['n', 'n', 'n']
+[tests.expected.output]
+prompts = ['Install Microsoft.WindowsTerminal? [y/N]', 'Install Microsoft.PowerShell? [y/N]', 'Install Posting? [y/N]']
+native_installs = []
+winget_bootstraps = 0
+font_installs = 0
+profile_configured = false
+terminal_profile_created = false
+terminal_font_configured = false
+configuration_copied = true
+
+[[tests]]
+id = 'yes_installs_missing_components_without_questions'
+action = 'selective_install'
+[tests.input]
+missing_commands = ['winget', 'uv', 'docker', 'posting']
+font_installed = false
+answers = []
+yes = true
+[tests.expected.output]
+prompts = []
+native_installs = ['astral-sh.uv', 'Docker.DockerDesktop', 'posting']
+winget_bootstraps = 1
+font_installs = 1
+profile_configured = true
+terminal_profile_created = true
+terminal_font_configured = true
+configuration_copied = true
+
+[[tests]]
+id = 'decline_winget_skips_its_applications'
+action = 'selective_install'
+[tests.input]
+missing_commands = ['winget', 'docker', 'posting']
+font_installed = true
+answers = ['n', 'n']
+[tests.expected.output]
+prompts = ['Install WinGet? [y/N]', 'Install Posting? [y/N]']
+native_installs = []
+winget_bootstraps = 0
+font_installs = 0
+profile_configured = true
+terminal_profile_created = true
+terminal_font_configured = true
+configuration_copied = true

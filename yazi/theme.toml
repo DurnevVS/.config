@@ -1,0 +1,5 @@
+#:schema https://yazi-rs.github.io/schemas/theme.json
+# Install first: ya pkg add yazi-rs/flavors:catppuccin-mocha
+[flavor]
+dark = "catppuccin-mocha"
+light = "catppuccin-mocha"

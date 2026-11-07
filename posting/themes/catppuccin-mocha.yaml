@@ -1,0 +1,10 @@
+name: catppuccin-mocha
+primary: '#89b4fa'
+secondary: '#cba6f7'
+accent: '#f5c2e7'
+background: '#1e1e2e'
+surface: '#313244'
+panel: '#181825'
+error: '#f38ba8'
+success: '#a6e3a1'
+warning: '#f9e2af'

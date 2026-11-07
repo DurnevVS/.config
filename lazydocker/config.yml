@@ -1,0 +1,9 @@
+gui:
+  border: rounded
+  theme:
+    activeBorderColor: ['#cba6f7', bold]
+    inactiveBorderColor: ['#a6adc8']
+    selectedLineBgColor: ['#313244']
+    optionsTextColor: ['#89b4fa']
+commandTemplates:
+  dockerCompose: docker compose

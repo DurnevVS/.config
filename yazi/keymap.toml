@@ -1,0 +1,79 @@
+#:schema https://yazi-rs.github.io/schemas/keymap.json
+# Only prepend new keys; all built-in navigation and file operations remain.
+
+[[mgr.prepend_keymap]]
+on = "<C-q>"
+run = "quit"
+desc = "Quit Yazi"
+
+[[mgr.prepend_keymap]]
+on = "e"
+run = "shell --block -- micro %h"
+desc = "Edit hovered file in micro"
+for = "windows"
+
+[[mgr.prepend_keymap]]
+on = "M"
+run = "shell --block -- glow -p %h"
+desc = "Read hovered Markdown file in Glow"
+for = "windows"
+
+[[mgr.prepend_keymap]]
+on = ["b", "a"]
+run = "plugin yamb -- save"
+desc = "Bookmark: add hovered file or folder"
+
+[[mgr.prepend_keymap]]
+on = ["b", "g"]
+run = "plugin yamb -- jump_by_key"
+desc = "Bookmark: jump by key"
+
+[[mgr.prepend_keymap]]
+on = ["b", "f"]
+run = "plugin yamb -- jump_by_fzf"
+desc = "Bookmark: fuzzy search"
+
+[[mgr.prepend_keymap]]
+on = ["b", "d"]
+run = "plugin yamb -- delete_by_key"
+desc = "Bookmark: delete by key"
+
+[[mgr.prepend_keymap]]
+on = ["b", "D"]
+run = "plugin yamb -- delete_by_fzf"
+desc = "Bookmark: choose with fzf and delete"
+
+[[mgr.prepend_keymap]]
+on = ["b", "r"]
+run = "plugin yamb -- rename_by_key"
+desc = "Bookmark: rename by key"
+
+[[mgr.prepend_keymap]]
+on = ["b", "R"]
+run = "plugin yamb -- rename_by_fzf"
+desc = "Bookmark: choose with fzf and rename"
+
+[[mgr.prepend_keymap]]
+on = "<Tab>"
+run = "plugin toggle-pane max-preview"
+desc = "Maximize or restore the preview pane"
+
+[[mgr.prepend_keymap]]
+on = "<Up>"
+run = "plugin preview-arrow -- -1"
+desc = "Scroll maximized preview up or move cursor up"
+
+[[mgr.prepend_keymap]]
+on = "<Down>"
+run = "plugin preview-arrow -- 1"
+desc = "Scroll maximized preview down or move cursor down"
+
+[[mgr.prepend_keymap]]
+on = [ "g", "l" ]
+run = 'shell "lazygit" --block'
+desc = "Open Lazygit"
+
+[[mgr.prepend_keymap]]
+on = [ "g", "x" ]
+run = 'shell "codex" --block'
+desc = "Open Codex"

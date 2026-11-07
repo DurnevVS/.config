@@ -1,0 +1,30 @@
+os:
+  editPreset: "micro"
+
+gui:
+  sidePanelWidth: 0.25
+  theme:
+    activeBorderColor:
+      - '#cba6f7'
+      - bold
+    
+    inactiveBorderColor:
+      - '#585b70'
+
+    selectedLineBgColor:
+      - '#313244'
+
+keybinding:
+  universal:
+    quit: <c-q>
+
+git:
+  diffRenderers:
+    - name: "Side by side"
+      command: 'delta --config="$DOTFILES_DELTA_CONFIG" --dark --paging=never --side-by-side --line-numbers'
+
+    - name: "Unified"
+      command: 'delta --config="$DOTFILES_DELTA_CONFIG" --dark --paging=never --line-numbers'
+
+    - name: "Original"
+      type: rawGit
